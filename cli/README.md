@@ -121,7 +121,12 @@ bash workflow/create.sh http://localhost:8081 token.txt \
 '{"name": "PTM-compass",
 "pipeline": "https://github.com/CNIC-Proteomics/nf-PTM-compass",
 "revision": "0.1.0",
-"profiles": "guest",
+"profiles": {
+  "cnic": null,
+  "singularity": {
+    "image": "library://proteomicscnic/next-launcher/ptm-compass:0.1.5"
+  }
+},
 "description": "PTM-compass workflow"
 }' workflow_id.txt
 ```
