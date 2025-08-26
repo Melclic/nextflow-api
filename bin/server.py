@@ -20,6 +20,7 @@ import zipfile
 import io
 import mimetypes
 import traceback
+import re
 # login
 import bcrypt
 import jwt
@@ -231,6 +232,69 @@ async def initialize_users(db):
 	except Exception as e:
 		print(f'** guest user: {e}')
 
+#
+# Initialize the provided profiles
+#
+# import asyncio
+# async def initialize_profiles(profiles):
+def initialize_profiles(profiles, workflow_dir):
+	"""
+	Validate and normalize profiles coming from the client.
+	- Keep only allowed roles.
+	- Handle 'singularity' profile by pulling the image into the cache directory.
+	"""
+	if not isinstance(profiles, dict):
+		log_exception('Profiles must be a dictionary')
+		return {}
+
+	validated = {}
+	for key, value in profiles.items():
+		# role validation
+		if key in env.ALLOWED_ROLES:
+			validated[key] = value
+		# singularity profile handling
+		elif key == "singularity" and isinstance(value, dict):
+			validated["singularity"] = value
+
+			# try pulling the singularity image
+			try:
+				image = value.get("image")
+				if image:
+					# get the image file names and symlink names
+					image_name = os.path.basename(image)
+					image_file = re.sub(r'[:/]', '_', image_name) + ".sif"
+					image_path = os.path.join(env.NXF_SINGULARITY_CACHEDIR, image_file)
+					link_path = os.path.join(workflow_dir, "image.sif")
+					# build shell command
+					cmd = f'[ -f {image_file} ] || singularity pull --arch amd64 {image_file} {image} && ln -s {image_path} {link_path}'
+					# run synchronously in shell inside cache directory
+					result = subprocess.run(cmd, cwd=env.NXF_SINGULARITY_CACHEDIR, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+# 					process = await asyncio.create_subprocess_shell(cmd, cwd=env.NXF_SINGULARITY_CACHEDIR, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+# 					stdout, stderr = await process.communicate()
+					if result.returncode == 0:
+						print(f'** singularity image ready: {image_file}', flush=True)
+					else:
+						log_exception(f'Singularity pull failed ({result.returncode}): {result.stderr.decode().strip()}')
+				else:
+					log_exception('Singularity profile provided without "image" key')
+
+			except Exception as e:
+				log_exception(e)
+
+	return validated
+
+#
+# Create beforeScript: provide the singilarity image for the current workflow
+#
+def create_before_script(workflow_dir):
+	return f'''
+process {{
+    //
+    // Modules
+    //
+    container = "{workflow_dir}/image.sif"
+}}
+'''
 
 
 #-------------------------------------
@@ -1054,7 +1118,7 @@ class WorkflowCreateHandler(CORSAuthMixin, tornado.web.RequestHandler):
 		'author': '',
 		'description': '',
 		'revision': 'main',
-		'profiles': 'guest',
+		'profiles': {'guest': None},
 		'n_attempts': 0,
 		'attempts': []
 	}
@@ -1102,9 +1166,6 @@ class WorkflowCreateHandler(CORSAuthMixin, tornado.web.RequestHandler):
 			# append the server name
 			workflow['host_name'] = env.HOST_NAME
 
-			# save workflow
-			await db.workflow_create(workflow)
-
 			# create workflow directory
 			workflow_dir = os.path.join(env.WORKFLOWS_DIR, workflow['_id'])
 			os.makedirs(workflow_dir)
@@ -1112,6 +1173,12 @@ class WorkflowCreateHandler(CORSAuthMixin, tornado.web.RequestHandler):
 			# save meta file
 			meta = backend.FileMeta(os.path.join(workflow_dir, 'meta.json'))
 			await meta.create(workflow)
+
+			# initialize and check the profiles
+			workflow['profiles'] = initialize_profiles(workflow['profiles'], workflow_dir)
+
+			# save workflow
+			await db.workflow_create(workflow)
 
 			self.set_status(201)
 			self.set_header('content-type', 'application/json')
@@ -1133,7 +1200,6 @@ class WorkflowEditHandler(CORSAuthMixin, tornado.web.RequestHandler):
 		'author': '',
 		'description': '',
 		'revision': 'main',
-		'profiles': 'guest',
 		'n_attempts': 0,
 		'attempts': []
 	}
@@ -1305,6 +1371,9 @@ class WorkflowLaunchHandler(CORSAuthMixin, tornado.web.RequestHandler):
 
 			# append additional settings to nextflow.config
 			with open(dst, 'a') as f:
+				# profiles beforescript
+				before_script = create_before_script(workflow_dir)
+				f.write(before_script)
 				weblog_url = 'http://%s:%d/api/tasks' % (socket.gethostbyname(socket.gethostname()), tornado.options.options.port)
 				f.write('weblog { enabled = true\n url = \"%s\" }\n' % (weblog_url))
 				f.write('k8s { launchDir = \"%s\" }\n' % (workflow_dir))

@@ -25,6 +25,9 @@ def run_workflow(workflow, attempt, workflow_dir, output_dir, resume):
 	# prepare command line arguments
 	run_name = get_run_name(workflow)
 
+	# get the profiles
+	profiles = ",".join(workflow['profiles'].keys())
+
 	if env.NXF_EXECUTOR == 'k8s':
 		args = [
 			'nextflow',
@@ -34,7 +37,7 @@ def run_workflow(workflow, attempt, workflow_dir, output_dir, resume):
 			'-ansi-log', 'false',
 			'-latest',
 			'-name', run_name,
-			'-profile', workflow['profiles'],
+			'-profile', profiles,
 			'-revision', workflow['revision'],
 			'-work-dir', workflow_dir,
 			'-volume-mount', env.PVC_NAME
@@ -49,7 +52,7 @@ def run_workflow(workflow, attempt, workflow_dir, output_dir, resume):
 			'-ansi-log', 'false',
 			'-latest',
 			'-name', run_name,
-			'-profile', workflow['profiles'],
+			'-profile', profiles,
 			'-work-dir', workflow_dir,
 			'-revision', workflow['revision']
 		]
@@ -63,7 +66,7 @@ def run_workflow(workflow, attempt, workflow_dir, output_dir, resume):
 			'-revision', workflow['revision'],
 			'-latest',
 			'-name', run_name,
-			'-profile', workflow['profiles'],
+			'-profile', profiles,
 			'-work-dir', workflow_dir,
 			'-ansi-log', 'false'
 		]
