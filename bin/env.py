@@ -11,6 +11,7 @@ NXF_API_HOME = os.environ.get('NXF_API_HOME', '/opt/nextflow-api')
 NXF_EXECUTOR = os.environ.get('NXF_EXECUTOR', default='local')
 NXF_CONF = os.environ.get('NXF_CONF')
 PVC_NAME = os.environ.get('PVC_NAME')
+NXF_SINGULARITY_CACHEDIR = os.environ.get('NXF_SINGULARITY_CACHEDIR')
 
 
 
@@ -73,6 +74,8 @@ MONGODB_DB = os.environ.get('MONGODB_DB')
 JWT_SECRET = os.environ.get('JWT_SECRET', 'your_jwt_secret')
 JWT_ALGORITHM = os.environ.get('JWT_ALGORITHM', 'HS256')
 JWT_EXP_DELTA_SECONDS = int(os.environ.get('JWT_EXP_DELTA_SECONDS', 14400)) # 4h of user session
+# allowed roles for users
+ALLOWED_ROLES = os.environ.get('ALLOWED_ROLES', 'admin,guest').split(',')
 # guest user
 USER_GUEST = os.environ.get('USER_GUEST', 'guest')
 PWD_GUEST = os.environ.get('PWD_GUEST', 'guest')
