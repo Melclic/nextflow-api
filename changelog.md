@@ -1,4 +1,32 @@
 ___
+## 1.6
+
+### Date 📅 *2025_08*
+
+### Changes in detail
+
+**rc1**
++ Remove the hardcoded variable MONGODB_PORT.
+**rc2**
++ Rename the env variable HOST_IP to HOST_NAME.
++ Include the host name in the workflow report and in the workflow meta file.
++ Display the summary log correctly in the workflow trace log.
+**rc3**
++ Fixed a bug dowloading the archive file.
+**rc4**
++ Added needed 'psutil' module.
++ Added required env variables for the new Singularity environment.
++ Added startup script to pull Singularity images into NXF_SINGULARITY_CACHEDIR for all pipelines in NXF_PIPELINES.
++ Updated documentation for posting a workflow with the new profile info.
++ Updated for Nextflow execution using Singularity pipeline images.
+**rc5**
++ Nextflow always *loads the repo's nextflow.config first* and then merges overrides from the *-c* option. This change allows providing a config file directly in the command line.
+
+
+
+
+
+___
 ## 1.5
 
 ### Date 📅 *2025_04*
