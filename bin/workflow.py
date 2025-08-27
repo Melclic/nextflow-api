@@ -34,6 +34,7 @@ def run_workflow(workflow, attempt, workflow_dir, output_dir, resume):
 			'-log', os.path.join(output_dir, 'logs', 'nextflow.log'),
 			'kuberun',
 			workflow['pipeline'],
+			'-c', os.path.join(workflow_dir, 'nextflow.config'),
 			'-ansi-log', 'false',
 			'-latest',
 			'-name', run_name,
@@ -49,6 +50,7 @@ def run_workflow(workflow, attempt, workflow_dir, output_dir, resume):
 			'-log', os.path.join(output_dir, 'logs', 'nextflow.log'),
 			'run',
 			workflow['pipeline'],
+			'-c', os.path.join(workflow_dir, 'nextflow.config'),
 			'-ansi-log', 'false',
 			'-latest',
 			'-name', run_name,
@@ -68,6 +70,7 @@ def run_workflow(workflow, attempt, workflow_dir, output_dir, resume):
 			'-name', run_name,
 			'-profile', profiles,
 			'-work-dir', workflow_dir,
+			'-c', os.path.join(workflow_dir, 'nextflow.config'),
 			'-ansi-log', 'false'
 		]
 

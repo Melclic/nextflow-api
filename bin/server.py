@@ -235,8 +235,6 @@ async def initialize_users(db):
 #
 # Initialize the provided profiles
 #
-# import asyncio
-# async def initialize_profiles(profiles):
 def initialize_profiles(profiles, workflow_dir):
 	"""
 	Validate and normalize profiles coming from the client.
@@ -269,8 +267,6 @@ def initialize_profiles(profiles, workflow_dir):
 					cmd = f'[ -f {image_file} ] || singularity pull --arch amd64 {image_file} {image} && ln -s {image_path} {link_path}'
 					# run synchronously in shell inside cache directory
 					result = subprocess.run(cmd, cwd=env.NXF_SINGULARITY_CACHEDIR, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-# 					process = await asyncio.create_subprocess_shell(cmd, cwd=env.NXF_SINGULARITY_CACHEDIR, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-# 					stdout, stderr = await process.communicate()
 					if result.returncode == 0:
 						print(f'** singularity image ready: {image_file}', flush=True)
 					else:
@@ -286,15 +282,18 @@ def initialize_profiles(profiles, workflow_dir):
 #
 # Create beforeScript: provide the singilarity image for the current workflow
 #
-def create_before_script(workflow_dir):
-	return f'''
+def create_before_script(profiles, workflow_dir):
+	if "singularity" in profiles:
+		return f'''
 process {{
-    //
-    // Modules
-    //
-    container = "{workflow_dir}/image.sif"
+	//
+	// Modules
+	//
+	container = "{workflow_dir}/image.sif"
 }}
 '''
+	else:
+		return ''
 
 
 #-------------------------------------
@@ -1372,11 +1371,11 @@ class WorkflowLaunchHandler(CORSAuthMixin, tornado.web.RequestHandler):
 			# append additional settings to nextflow.config
 			with open(dst, 'a') as f:
 				# profiles beforescript
-				before_script = create_before_script(workflow_dir)
+				before_script = create_before_script(workflow['profiles'], workflow_dir)
 				f.write(before_script)
 				weblog_url = 'http://%s:%d/api/tasks' % (socket.gethostbyname(socket.gethostname()), tornado.options.options.port)
-				f.write('weblog { enabled = true\n url = \"%s\" }\n' % (weblog_url))
-				f.write('k8s { launchDir = \"%s\" }\n' % (workflow_dir))
+				f.write('weblog {\n  enabled = true\n  url = \"%s\" \n}\n' % (weblog_url))
+				f.write('k8s {\n  launchDir = \"%s\" \n}\n' % (workflow_dir))
 
 			# set up the output directory
 			output_dir = os.path.join(env.OUTPUTS_DIR, attempt_dir)
