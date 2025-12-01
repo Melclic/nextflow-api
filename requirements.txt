@@ -62,3 +62,4 @@ wrapt
 zipp
 bcrypt
 psutil
+PyJWT

@@ -18,27 +18,53 @@ export TF_CPP_MIN_LOG_LEVEL="3"
 
 # obtain the singularity images
 # reads the pipelines (from $NXF_PIPELINES) and pulls missing '.sif' images (to $NXF_SINGULARITY_CACHEDIR)
-for f in ${NXF_PIPELINES}/*.json; do    
-    img=$(jq -r '.profiles.singularity.image // empty' "$f") # extract singularity image string
-    if [[ -n "$img" ]]; then        
-        fname=$(basename "$img" | sed 's/:/_/').sif # create expected filename (replace ":" with "_", add .sif)
-        sif="${NXF_SINGULARITY_CACHEDIR}/$fname"
-        if [[ ! -f "$sif" ]]; then
-            echo "** pulling $img into $sif..."
-            singularity pull --arch amd64 "$sif" "$img"
-        else
-            echo "** skipping $img, already present at $sif"
-        fi
+# for f in ${NXF_PIPELINES}/*.json; do    
+#     img=$(jq -r '.profiles.singularity.image // empty' "$f") # extract singularity image string
+#     if [[ -n "$img" ]]; then        
+#         fname=$(basename "$img" | sed 's/:/_/').sif # create expected filename (replace ":" with "_", add .sif)
+#         sif="${NXF_SINGULARITY_CACHEDIR}/$fname"
+#         if [[ ! -f "$sif" ]]; then
+#             echo "** pulling $img into $sif..."
+#             singularity pull --arch amd64 "$sif" "$img"
+#         else
+#             echo "** skipping $img, already present at $sif"
+#         fi
+#     fi
+# done
+
+echo "Backend selected: ${BACKEND}"
+
+# file backend
+if [[ "${BACKEND}" == "file" ]]; then
+    # optional override, default matches server.py default
+    URL_FILE="${URL_FILE:-db.pkl}"
+
+    echo "** Starting server with file backend"
+    echo "** ${HOME_DIR}/bin/server.py --backend=file --url-file=${URL_FILE}"
+    exec "${HOME_DIR}/bin/server.py" \
+        --backend=file \
+        --url-file="${URL_FILE}"
+
+# mongo backend
+elif [[ "${BACKEND}" == "mongo" ]]; then
+
+    # local or remote mongo
+    if [[ "${MONGODB_HOST}" == "local" ]]; then
+        echo "** Starting local MongoDB instance"
+        scripts/db-startup.sh
+        MONGO_URL="mongodb://${MONGODB_USER}:${MONGODB_PWD}@localhost:${MONGODB_PORT}/${MONGODB_DB}?authSource=admin"
+    else
+        MONGO_URL="mongodb://${MONGODB_USER}:${MONGODB_PWD}@${MONGODB_HOST}:${MONGODB_PORT}/${MONGODB_DB}?authSource=admin"
     fi
-done
 
-# # start server with local mongodb
-# if [[ ${BACKEND} == "mongo" ]]; then
-#     scripts/db-startup.sh
-# fi
-# echo "** ${HOME_DIR}/bin/server.py --backend=${BACKEND}"
-# ${HOME_DIR}/bin/server.py --backend=${BACKEND}
+    echo "** Starting server with Mongo backend"
+    echo "** ${HOME_DIR}/bin/server.py --backend=mongo --url-mongo=${MONGO_URL}"
+    exec "${HOME_DIR}/bin/server.py" \
+        --backend=mongo \
+        --url-mongo="${MONGO_URL}"
 
-# start server with remote mongodb
-echo "** ${HOME_DIR}/bin/server.py --backend=${BACKEND} --url-mongo=mongodb://${MONGODB_USER}:XXX@${MONGODB_HOST}:${MONGODB_PORT}/${MONGODB_DB}?authSource=admin"
-${HOME_DIR}/bin/server.py --backend=${BACKEND} --url-mongo=mongodb://${MONGODB_USER}:${MONGODB_PWD}@${MONGODB_HOST}:${MONGODB_PORT}/${MONGODB_DB}?authSource=admin
+# unknown backend
+else
+    echo "ERROR: Unknown BACKEND value: ${BACKEND} expected file or mongo"
+    exit 1
+fi

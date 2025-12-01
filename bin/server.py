@@ -224,14 +224,14 @@ async def initialize_users(db):
 		print(f'** admin user with ID: {user_admin["_id"]}')
 	except Exception as e:
 		print(f'** admin user: {e}')
-
+	print(f'** admin: {env.USER_ADMIN}, {env.PWD_ADMIN}')
 	# initialize the guest user
 	try:
 		user_guest = await create_user(db, env.USER_GUEST, env.PWD_GUEST)
 		print(f'** guest user with ID: {user_guest["_id"]}')
 	except Exception as e:
 		print(f'** guest user: {e}')
-
+	print(f'** admin: {env.USER_GUEST}, {env.PWD_GUEST}')
 #
 # Initialize the provided profiles
 #
@@ -282,18 +282,18 @@ def initialize_profiles(profiles, workflow_dir):
 #
 # Create beforeScript: provide the singilarity image for the current workflow
 #
-def create_before_script(profiles, workflow_dir):
-	if "singularity" in profiles:
-		return f'''
-process {{
-	//
-	// Modules
-	//
-	container = "{workflow_dir}/image.sif"
-}}
-'''
-	else:
-		return ''
+# def create_before_script(profiles, workflow_dir):
+# 	if "singularity" in profiles:
+# 		return f'''
+# process {{
+# 	//
+# 	// Modules
+# 	//
+# 	container = "{workflow_dir}/image.sif"
+# }}
+# '''
+# 	else:
+# 		return ''
 
 
 #-------------------------------------
@@ -1108,8 +1108,7 @@ class WorkflowCreateHandler(CORSAuthMixin, tornado.web.RequestHandler):
 
 	REQUIRED_KEYS = set([
 		'pipeline',
-		'revision',
-		'profiles'
+		'profiles',
 	])
 
 	DEFAULTS = {
@@ -1347,7 +1346,7 @@ class WorkflowLaunchHandler(CORSAuthMixin, tornado.web.RequestHandler):
 			# update attempt execution
 			attempt = {
 				'id': workflow['n_attempts'],
-				'description': data['description'],
+				'description': workflow['description'],
 				'inputs': data['inputs'],
 				'date_submitted': int(time.time() * 1000),
 				'status': 'running',
@@ -1369,13 +1368,13 @@ class WorkflowLaunchHandler(CORSAuthMixin, tornado.web.RequestHandler):
 				shutil.copyfile(src, dst)
 
 			# append additional settings to nextflow.config
-			with open(dst, 'a') as f:
-				# profiles beforescript
-				before_script = create_before_script(workflow['profiles'], workflow_dir)
-				f.write(before_script)
-				weblog_url = 'http://%s:%d/api/tasks' % (socket.gethostbyname(socket.gethostname()), tornado.options.options.port)
-				f.write('weblog {\n  enabled = true\n  url = \"%s\" \n}\n' % (weblog_url))
-				f.write('k8s {\n  launchDir = \"%s\" \n}\n' % (workflow_dir))
+			# with open(dst, 'a') as f:
+			# 	# profiles beforescript
+			# 	before_script = create_before_script(workflow['profiles'], workflow_dir)
+			# 	f.write(before_script)
+			# 	weblog_url = 'http://%s:%d/api/tasks' % (socket.gethostbyname(socket.gethostname()), tornado.options.options.port)
+			# 	f.write('weblog {\n  enabled = true\n  url = \"%s\" \n}\n' % (weblog_url))
+			# 	f.write('k8s {\n  launchDir = \"%s\" \n}\n' % (workflow_dir))
 
 			# set up the output directory
 			output_dir = os.path.join(env.OUTPUTS_DIR, attempt_dir)

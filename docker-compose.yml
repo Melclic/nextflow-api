@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    container_name: metaxime-app
+
+    # Your startup script (ENTRYPOINT) receives BACKEND + URL_FILE via env vars
+    entrypoint: ["/bin/sh", "-c", "/opt/nextflow-api/scripts/startup-local.sh file"]
+
+    environment:
+      #these are config for file db
+      URL_FILE: "/nextflow_workspace/db.pkl"
+      OUTPUTS_DIR: "/nextflow_workspace/outputs/"
+      NXF_CONF: "/nextflow_workspace/nextflow.config"
+      NXF_EXECUTOR: "local"
+      USER_ADMIN: "admin"
+      PWD_ADMIN: "test"
+      USER_GUEST: "guest"
+      PWD_GUEST: "test"
+
+    volumes:
+      # Use host docker daemon for Nextflow
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Persistent storage for FILE backend → mounts at /workspace
+      - ./nextflow_workspace:/nextflow_workspace/
+    ports:
+      - "8080:8080"
+
+volumes:
+  metaxime_backend_data:
+    external: true
