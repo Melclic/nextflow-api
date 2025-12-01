@@ -1,7 +1,6 @@
 
 # client is hidden
 client
-Dockerfile
 README_original.md
 helm
 helm/.helmignore
