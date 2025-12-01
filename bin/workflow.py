@@ -65,10 +65,10 @@ def run_workflow(workflow, attempt, workflow_dir, output_dir, resume):
 			'-log', os.path.join(output_dir, 'logs', 'nextflow.log'),
 			'run',
 			workflow['pipeline'],
-			'-revision', workflow['revision'],
+			#'-revision', workflow['revision'],
 			'-latest',
 			'-name', run_name,
-			'-profile', profiles,
+			#'-profile', profiles,
 			'-work-dir', workflow_dir,
 			'-c', os.path.join(workflow_dir, 'nextflow.config'),
 			'-ansi-log', 'false'
@@ -90,6 +90,9 @@ def run_workflow(workflow, attempt, workflow_dir, output_dir, resume):
 	if resume:
 		args += ['-resume']
 
+
+	print('RUNNING ->')
+	print(args)
 	# launch workflow asynchronously
 	proc = subprocess.Popen(
 		args,

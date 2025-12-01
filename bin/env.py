@@ -17,8 +17,9 @@ NXF_SINGULARITY_CACHEDIR = os.environ.get('NXF_SINGULARITY_CACHEDIR')
 
 # Define working directories -----
 WORKSPACE_HOME = os.environ.get('WORKSPACE_HOME', '/nextflow_workspace')
+print(f'WORKSPACE_HOME: {WORKSPACE_HOME}')
 DATASPACE_HOME = os.environ.get('WORKSPACE_HOME', '/dataspace')
-OUTSPACE_HOME = os.environ.get('OUTSPACE_HOME', '/outspace')
+OUTSPACE_HOME = os.environ.get('WORKSPACE_HOME', '/outspace')
 BASE_DIRS = {
 	'k8s':    { 'dataspace': DATASPACE_HOME, 'workspace': WORKSPACE_HOME, 'outspace': OUTSPACE_HOME },
 	'local':  { 'dataspace': DATASPACE_HOME, 'workspace': WORKSPACE_HOME, 'outspace': OUTSPACE_HOME },
@@ -27,10 +28,15 @@ BASE_DIRS = {
 BASE_DIR = BASE_DIRS[NXF_EXECUTOR]
 
 DATASETS_DIR = os.path.join(BASE_DIR['dataspace'], '_datasets')
+print(f'DATASETS_DIR: {DATASETS_DIR}')
 WORKFLOWS_DIR = os.path.join(BASE_DIR['workspace'], '_workflows')
+print(f'WORKFLOWS_DIR: {WORKFLOWS_DIR}')
 TRACES_DIR = os.path.join(BASE_DIR['workspace'], '_traces')
+print(f'TRACES_DIR: {TRACES_DIR}')
 MODELS_DIR = os.path.join(BASE_DIR['workspace'], '_models')
+print(f'MODELS_DIR: {MODELS_DIR}')
 OUTPUTS_DIR = os.path.join(BASE_DIR['outspace'], '_outputs')
+print(f'OUTPUTS_DIR: {OUTPUTS_DIR}')
 
 
 
