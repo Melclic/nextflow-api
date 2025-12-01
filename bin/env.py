@@ -16,8 +16,8 @@ NXF_SINGULARITY_CACHEDIR = os.environ.get('NXF_SINGULARITY_CACHEDIR')
 
 
 # Define working directories -----
+WORKSPACE_HOME = os.environ.get('WORKSPACE_HOME', '/nextflow_workspace')
 DATASPACE_HOME = os.environ.get('WORKSPACE_HOME', '/dataspace')
-WORKSPACE_HOME = os.environ.get('WORKSPACE_HOME', '/workspace')
 OUTSPACE_HOME = os.environ.get('OUTSPACE_HOME', '/outspace')
 BASE_DIRS = {
 	'k8s':    { 'dataspace': DATASPACE_HOME, 'workspace': WORKSPACE_HOME, 'outspace': OUTSPACE_HOME },
